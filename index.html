@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Irish Whistle Tunes</title>
+    <script src="https://cdn.jsdelivr.net/npm/fuse.js@6.6.2"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f8f9fa;
+        }
+
+        .search-container {
+            text-align: center;
+            margin-top: 100px;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        h1 {
+            color: #1a73e8;
+            font-size: 2.5em;
+            margin-bottom: 30px;
+        }
+
+        .search-box {
+            width: 100%;
+            padding: 15px;
+            font-size: 16px;
+            border: 1px solid #dfe1e5;
+            border-radius: 24px;
+            outline: none;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .search-box:focus {
+            box-shadow: 0 1px 6px rgba(32,33,36,0.28);
+            border-color: rgba(223,225,229,0);
+        }
+
+        .results-container {
+            margin-top: 20px;
+            width: 100%;
+            max-width: 800px;
+        }
+
+        .tune-card {
+            background: white;
+            padding: 20px;
+            margin: 10px 0;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .tune-title {
+            color: #1a73e8;
+            font-size: 1.2em;
+            margin-bottom: 10px;
+        }
+
+        .tune-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .tune-detail {
+            color: #5f6368;
+        }
+
+        .video-link {
+            color: #1a73e8;
+            text-decoration: none;
+        }
+
+        .video-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="search-container">
+        <h1>Irish Whistle Tunes</h1>
+        <input type="text" class="search-box" placeholder="Search for tunes..." id="searchInput">
+    </div>
+    <div class="results-container" id="resultsContainer"></div>
+
+    <script>
+        let tunesData = [];
+        let fuse;
+
+        // Configure Fuse.js options
+        const fuseOptions = {
+            keys: ['Tune Title', 'Rhythm', 'Key', 'Mode'],
+            threshold: 0.3,
+            distance: 100
+        };
+
+        // Load the CSV data
+        fetch('data/tunes_data.csv')
+            .then(response => response.text())
+            .then(data => {
+                // Parse CSV
+                const lines = data.split('\n');
+                const headers = lines[0].split(',');
+
+                tunesData = lines.slice(1).map(line => {
+                    const values = line.split(',');
+                    return headers.reduce((obj, header, index) => {
+                        obj[header.trim()] = values[index]?.trim();
+                        return obj;
+                    }, {});
+                });
+
+                // Initialize Fuse
+                fuse = new Fuse(tunesData, fuseOptions);
+            });
+
+        // Search functionality
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            const searchTerm = e.target.value;
+            const resultsContainer = document.getElementById('resultsContainer');
+
+            if (!searchTerm) {
+                resultsContainer.innerHTML = '';
+                return;
+            }
+
+            const results = fuse.search(searchTerm);
+
+            resultsContainer.innerHTML = results.map(result => {
+                const tune = result.item;
+                return `
+                    <div class="tune-card">
+                        <div class="tune-title">${tune['Tune Title']}</div>
+                        <div class="tune-details">
+                            <div class="tune-detail">
+                                <strong>Rhythm:</strong> ${tune['Rhythm']}
+                            </div>
+                            <div class="tune-detail">
+                                <strong>Key:</strong> ${tune['Key']}
+                            </div>
+                            <div class="tune-detail">
+                                <strong>Mode:</strong> ${tune['Mode']}
+                            </div>
+                            ${tune['Learning Video'] ? `
+                                <div class="tune-detail">
+                                    <strong>Video:</strong>
+                                    <a href="${tune['Learning Video']}" class="video-link" target="_blank">Watch Tutorial</a>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        });
+    </script>
+</body>
+</html>
+
